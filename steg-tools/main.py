@@ -401,5 +401,6 @@ class App(CTk):
     def one_file_button_event(self):
         self.select_frame_by_name('one_file')
 
+
 if __name__ == '__main__':
     main()

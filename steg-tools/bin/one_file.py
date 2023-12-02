@@ -13,7 +13,7 @@ def get_img_histogram(path: str) -> list[int]:
         log.error(e)
 
 
-def detect_strings(path: str, channel: int, offset: str) -> list[str]:
+def detect_strings(path: str, channel: int, offset: int) -> list[str]:
     """Detect strings hidden in images."""
     try:
         img = Img.open(path)
