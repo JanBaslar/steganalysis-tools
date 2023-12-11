@@ -2,7 +2,7 @@ from customtkinter import *
 from PIL import Image
 import matplotlib.pyplot as plt
 
-from bin import utils, original_and_copy, one_file
+from bin import utils, original_and_copy, one_file, destroy_message
 
 def main():
     app = App()
@@ -20,6 +20,7 @@ class App(CTk):
         self.init_about_frame()
         self.init_original_and_copy_frame()
         self.init_one_file_frame()
+        self.init_destroy_frame()
 
         self.select_frame_by_name('about')
 
@@ -41,6 +42,12 @@ class App(CTk):
         self.one_file_channel = 'RED'
         self.one_file_offset = '0'
 
+        self.destroy_path = None
+        self.destroy_format = 'JPG'
+        self.destroy_compress = 50.0
+        self.destroy_channel = 'RED'
+        self.destroy_percent = 50.0
+
     def init_placeholders(self):
         """Inits placeholder images from static folder"""
         self.original_image = CTkImage(light_image=Image.open('static/placeholders/image_light.png'), 
@@ -54,12 +61,16 @@ class App(CTk):
         self.one_file_image = CTkImage(light_image=Image.open('static/placeholders/image_light.png'), 
                                    dark_image=Image.open('static/placeholders/image_dark.png'), 
                                    size=(230, 180))
+        
+        self.destroy_image = CTkImage(light_image=Image.open('static/placeholders/image_light.png'), 
+                                   dark_image=Image.open('static/placeholders/image_dark.png'), 
+                                   size=(230, 180))
 
     def init_nav(self):
         """Inits left nav bar"""
         self.nav_frame = CTkFrame(self, corner_radius=0)
         self.nav_frame.grid(row=0, column=0, sticky=NSEW)
-        self.nav_frame.grid_rowconfigure(4, weight=1)
+        self.nav_frame.grid_rowconfigure(5, weight=1)
 
         self.name_label = CTkLabel(self.nav_frame, text='Steganalysis tools', compound='left', font=CTkFont(size=15, weight='bold'))
         self.name_label.grid(row=0, column=0, padx=15, pady=15)
@@ -74,6 +85,9 @@ class App(CTk):
         self.one_file_button = self.create_nav_button('One file', self.one_file_button_event)
         self.one_file_button.grid(row=3, column=0, sticky=EW)
 
+        self.destroy_button = self.create_nav_button('Destroy message', self.destroy_button_event)
+        self.destroy_button.grid(row=4, column=0, sticky=EW)
+
 
     def create_nav_button(self, label, command):
         return CTkButton(self.nav_frame, corner_radius=0, height=40, border_spacing=10, text=label,
@@ -83,7 +97,9 @@ class App(CTk):
     def init_about_frame(self):
         """Inits home about frame"""
         self.about_frame = CTkFrame(self, corner_radius=0, fg_color='transparent')
-        about_text = CTkLabel(self.about_frame, text='About steganalysis tools app')
+        about_text = CTkLabel(self.about_frame, text='This application was developed as part of a seminar project\nand allows to perform various stegoanalytical methods on image files.\n' +
+                              'The application can compare the properties of the original image with its copy,\ndetect a secret message in one file or destroy it using several techniques.',
+                              font=CTkFont(size=16, weight='normal'))
         about_text.place_configure(relx=0.5, rely=0.5, anchor=CENTER)
 
     def init_original_and_copy_frame(self):
@@ -138,7 +154,7 @@ class App(CTk):
         self.find_diff_pixels_button.place_configure(relx=0.51, rely=0.90, relwidth=0.47, relheight=0.07)
 
     def init_one_file_frame(self):
-        """Inits one_file_frame frame"""
+        """Inits one file frame"""
         self.one_file_frame = CTkFrame(self, corner_radius=0, fg_color='transparent')
 
         self.one_file_inner_frame = CTkFrame(self.one_file_frame, fg_color=('gray85', 'gray10'))
@@ -186,8 +202,72 @@ class App(CTk):
                                                 command=self.detect_odd_pixels_button_event, font=CTkFont(size=15, weight='bold'))
         self.detect_odd_pixels_button.place_configure(relx=0.51, rely=0.90, relwidth=0.47, relheight=0.07)
 
+    def init_destroy_frame(self):
+        """Inits destroy frame"""
+        self.destroy_frame = CTkFrame(self, corner_radius=0, fg_color='transparent')
+
+        self.destroy_inner_frame = CTkFrame(self.destroy_frame, fg_color=('gray85', 'gray10'))
+        self.destroy_inner_frame.place_configure(relx=0.02, rely=0.02, relheight=0.85, relwidth=0.47)
+        self.destroy_inner_frame.place()
+
+        self.destroy_label = CTkLabel(self.destroy_inner_frame, text="", image=self.destroy_image)
+        self.destroy_label.place_configure(relx=0.5, rely=0.25, anchor=CENTER)
+        self.destroy_label.place()
+
+        self.select_destroy_button = CTkButton(self.destroy_inner_frame, text='Select an image', 
+                                                fg_color=('gray75', 'gray25'), text_color=('gray10', 'gray90'),
+                                                command=self.select_destroy_button_event)
+        self.select_destroy_button.place_configure(relx=0.5, rely=0.52, relwidth=0.9, anchor=CENTER)
+        self.select_destroy_button.place()
+
+        self.destroy_info_label = CTkLabel(self.destroy_inner_frame, text="", font=CTkFont(size=15, weight='normal'))
+        self.destroy_info_label.place_configure(relx=0.05, rely=0.6)
+        self.destroy_info_label.place()
+
+        # Action Buttons
+        self.delete_button = CTkButton(self.destroy_frame, text='Delete selected image', 
+                                                command=self.delete_button_event, font=CTkFont(size=15, weight='bold'))
+        self.delete_button.place_configure(relx=0.02, rely=0.90, relwidth=0.47, relheight=0.07)
+
+        self.format_label = CTkLabel(self.destroy_frame, text='New format:')
+        self.format_label.place_configure(relx=0.51, rely=0.02)
+        self.format_option_menu = CTkOptionMenu(self.destroy_frame, values=['JPG', 'WEBP', 'PNG'],
+                                             command=self.format_combobox_callback)
+        self.format_option_menu.place_configure(relx=0.51, rely=0.07)
+
+        self.reformat_button = CTkButton(self.destroy_frame, text='Reformat image', 
+                                                command=self.reformat_button_event, font=CTkFont(size=15, weight='bold'))
+        self.reformat_button.place_configure(relx=0.51, rely=0.15, relwidth=0.47, relheight=0.07)
+
+        self.compress_label = CTkLabel(self.destroy_frame, text='Level of quality: ' + str(round(self.destroy_compress)) + ' %')
+        self.compress_label.place_configure(relx=0.51, rely=0.31)
+        self.compress_slider = CTkSlider(self.destroy_frame, from_=0, to=100, number_of_steps=20, 
+                                         command=self.compress_slider_event)
+        self.compress_slider.place_configure(relx=0.50, rely=0.37, relwidth=0.49)
+
+        self.compress_button = CTkButton(self.destroy_frame, text='Compress image', 
+                                                command=self.compress_button_event, font=CTkFont(size=15, weight='bold'))
+        self.compress_button.place_configure(relx=0.51, rely=0.42, relwidth=0.47, relheight=0.07)
+
+        self.enhance_channel_label = CTkLabel(self.destroy_frame, text='Channel:')
+        self.enhance_channel_label.place_configure(relx=0.51, rely=0.67)
+        self.enhance_option_menu = CTkOptionMenu(self.destroy_frame, values=['RED', 'GREEN', 'BLUE'],
+                                             command=self.enhance_combobox_callback)
+        self.enhance_option_menu.place_configure(relx=0.51, rely=0.72)
+
+        self.enhance_label = CTkLabel(self.destroy_frame, text='Enhance approximately: ' + str(round(self.destroy_percent)) + ' %')
+        self.enhance_label.place_configure(relx=0.51, rely=0.79)
+        self.enhance_slider = CTkSlider(self.destroy_frame, from_=0, to=100, number_of_steps=20, 
+                                         command=self.enhance_slider_event)
+        self.enhance_slider.place_configure(relx=0.50, rely=0.85, relwidth=0.49)
+
+        self.enhance_button = CTkButton(self.destroy_frame, text='Enhance image randomly', 
+                                                command=self.enhance_button_event, font=CTkFont(size=15, weight='bold'))
+        self.enhance_button.place_configure(relx=0.51, rely=0.90, relwidth=0.47, relheight=0.07)
+
+
     def select_original_button_event(self):
-        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.bmp'))])
+        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.webp', '.bmp'))])
         if img_path:
             img_info = original_and_copy.get_file_info(img_path)
             if img_info:
@@ -208,7 +288,7 @@ class App(CTk):
                 self.original_path = img_path
 
     def select_copy_button_event(self):
-        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.bmp'))])
+        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.webp', '.bmp'))])
         if img_path:
             img_info = original_and_copy.get_file_info(img_path)
             if img_info:
@@ -275,7 +355,7 @@ class App(CTk):
             window.attributes('-topmost', 'true')
 
     def select_one_file_button_event(self):
-        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.bmp'))])
+        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.webp', '.bmp'))])
         if img_path:
             img_info = original_and_copy.get_file_info(img_path)
             if img_info:
@@ -372,12 +452,93 @@ class App(CTk):
                 
             window.attributes('-topmost', 'true')
 
+    def select_destroy_button_event(self):
+        img_path = filedialog.askopenfilename(filetypes= [('Image file', ('.png', '.jpg', '.jpeg', '.webp', '.bmp'))])
+        if img_path:
+            img_info = original_and_copy.get_file_info(img_path)
+            if img_info:
+                img_size = utils.calculate_img_size(img_info.get('width'), img_info.get('height'))
+                self.destroy_image = CTkImage(Image.open(img_path), size=img_size)
+                self.destroy_label.destroy()
+                self.destroy_label = CTkLabel(self.destroy_inner_frame, text="", image=self.destroy_image)
+                self.destroy_label.place_configure(relx=0.5, rely=0.25, anchor=CENTER)
+                self.destroy_label.place()
+
+                self.destroy_info_label.destroy()
+                self.destroy_info_label = CTkLabel(self.destroy_inner_frame, anchor=W, justify=LEFT,
+                                                    text=utils.dict_to_info(img_info), 
+                                                    font=CTkFont(size=15, weight='normal'))
+                self.destroy_info_label.place_configure(relx=0.05, rely=0.6)
+                self.destroy_info_label.place()
+
+                self.destroy_path = img_path
+
+    def delete_button_event(self):
+        if self.destroy_path:
+            self.destroy_image = CTkImage(light_image=Image.open('static/placeholders/image_light.png'), 
+                                   dark_image=Image.open('static/placeholders/image_dark.png'), 
+                                   size=(230, 180))
+            self.destroy_label.destroy()
+            self.destroy_label = CTkLabel(self.destroy_inner_frame, text="", image=self.destroy_image)
+            self.destroy_label.place_configure(relx=0.5, rely=0.25, anchor=CENTER)
+            self.destroy_label.place()
+
+            self.destroy_info_label.destroy()
+            self.destroy_info_label = CTkLabel(self.destroy_inner_frame, anchor=W, justify=LEFT,
+                                                text="Image was deleted", 
+                                                font=CTkFont(size=15, weight='normal'))
+            self.destroy_info_label.place_configure(relx=0.05, rely=0.6)
+            self.destroy_info_label.place()
+
+            os.remove(self.destroy_path)
+            self.destroy_path = None
+
+    def format_combobox_callback(self, value):
+        self.destroy_format = value
+
+    def reformat_button_event(self):
+        if self.destroy_path:
+            filetypes = [('JPG file', ('.jpg'))] if self.destroy_format == 'JPG' else [('WEBP file', ('.webp'))] if self.destroy_format == 'WEBP' else [('PNG file', ('.png'))]
+            reformat_path = filedialog.asksaveasfilename(initialfile=os.path.splitext(self.destroy_path)[0] + '.' + self.destroy_format.lower(), filetypes=filetypes)
+            if reformat_path:
+                destroy_message.reformat_image(self.destroy_path, reformat_path, self.destroy_format)
+
+    def compress_slider_event(self, value):
+        self.destroy_compress = value
+        self.compress_label.destroy()
+        self.compress_label = CTkLabel(self.destroy_frame, text='Level of quality: ' + str(round(self.destroy_compress)) + ' %')
+        self.compress_label.place_configure(relx=0.51, rely=0.31)
+
+    def compress_button_event(self):
+        if self.destroy_path:
+            compress_path = filedialog.asksaveasfilename(initialfile=self.destroy_path)
+            if compress_path:
+                destroy_message.compress_image(self.destroy_path, compress_path, round(self.destroy_compress))
+
+    def enhance_combobox_callback(self, value):
+        self.destroy_channel = value
+
+    def enhance_slider_event(self, value):
+        self.destroy_percent = value
+        self.enhance_label.destroy()
+        self.enhance_label = CTkLabel(self.destroy_frame, text='Enhance approximately: ' + str(round(self.destroy_percent)) + ' %')
+        self.enhance_label.place_configure(relx=0.51, rely=0.79)
+
+    def enhance_button_event(self):
+        if self.destroy_path:
+            enhance_path = filedialog.asksaveasfilename(initialfile=self.destroy_path)
+            if enhance_path:
+                channel_str = self.destroy_channel
+                channel = 0 if channel_str == 'RED' else 1 if channel_str == 'GREEN' else 2
+                destroy_message.enhance_image(self.destroy_path, enhance_path, channel, round(self.destroy_percent))
+
 
     def select_frame_by_name(self, name):
         """Switches between frames"""
         self.about_button.configure(fg_color=('gray75', 'gray25') if name == 'about' else 'transparent')
         self.original_and_copy_button.configure(fg_color=('gray75', 'gray25') if name == 'original_and_copy' else 'transparent')
         self.one_file_button.configure(fg_color=('gray75', 'gray25') if name == 'one_file' else 'transparent')
+        self.destroy_button.configure(fg_color=('gray75', 'gray25') if name == 'destroy_message' else 'transparent')
 
         if name == 'about':
             self.about_frame.grid(row=0, column=1, sticky=NSEW)
@@ -391,6 +552,10 @@ class App(CTk):
             self.one_file_frame.grid(row=0, column=1, sticky=NSEW)
         else:
             self.one_file_frame.grid_forget()
+        if name == 'destroy_message':
+            self.destroy_frame.grid(row=0, column=1, sticky=NSEW)
+        else:
+            self.destroy_frame.grid_forget()
 
     def about_button_event(self):
         self.select_frame_by_name('about')
@@ -400,6 +565,9 @@ class App(CTk):
 
     def one_file_button_event(self):
         self.select_frame_by_name('one_file')
+
+    def destroy_button_event(self):
+        self.select_frame_by_name('destroy_message')
 
 
 if __name__ == '__main__':

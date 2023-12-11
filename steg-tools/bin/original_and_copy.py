@@ -6,9 +6,7 @@ import PIL.Image as Img
 log.basicConfig(level=log.INFO)
 
 def compare_by_hash(path_to_original: str, path_to_copy: str) -> tuple[bool, str, str]:
-    """
-    Compares two files by its hashes.
-    """
+    """Compares two files by its hashes."""
     orig_hash = hashlib.sha256()
     copy_hash = hashlib.sha256()
 
@@ -24,9 +22,7 @@ def compare_by_hash(path_to_original: str, path_to_copy: str) -> tuple[bool, str
 
 
 def get_file_info(path: str) -> dict:
-    """
-    Gets basic info about file as dictionary.
-    """
+    """Gets basic info about file as dictionary."""
     try:
         img = Img.open(path)
 
@@ -49,9 +45,7 @@ def get_file_info(path: str) -> dict:
 
 
 def compare_by_pixels(path_to_original: str, path_to_copy: str) -> list[dict]:
-    """
-    Compares two images pixel by pixel and returns list of dictionaries of different pixels.
-    """
+    """Compares two images pixel by pixel and returns list of dictionaries of different pixels."""
     try:
         orig_img = Img.open(path_to_original)
         copy_img = Img.open(path_to_copy)

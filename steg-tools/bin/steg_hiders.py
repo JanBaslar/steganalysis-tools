@@ -24,11 +24,11 @@ def hide_message_into_image(path: str, message: str, channel: int, offset: int) 
             if end:
                 break
 
-        img.save('C:/Users/jbaslar/Pictures/Demo/sus.png')
+        img.save('C:/Users/jbaslar/Pictures/Demo/picture.png')
         img.close()
         log.info('Message was hidden successfully.')
     except Exception as e:
         log.error('Error accrued during processing: ' + str(e))
         return 'Error accrued during processing!'
     
-hide_message_into_image('static/smile_A.png', '\nShiny happy people holding hands\n', 0, 810)
+hide_message_into_image('C:/Users/jbaslar/Pictures/Demo/original.png', '\nThese are some secret data hidden by LSB method.\n', 2, 64)

@@ -1,5 +1,4 @@
 import logging as log
-import os
 import PIL.Image as Img
 
 def get_img_histogram(path: str) -> list[int]:
